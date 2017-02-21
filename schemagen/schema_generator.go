@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"regexp"
 	"sort"
-	"strings"
 	"text/template"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	u "github.com/radeksimko/terraform-gen/internal/util"
 )
 
 type getDocsFunc func(iface interface{}, sf *reflect.StructField) string
@@ -22,7 +21,7 @@ type SchemaGenerator struct {
 }
 
 func (g *SchemaGenerator) FromStruct(iface interface{}) map[string]string {
-	rawType := dereferencePtrType(reflect.TypeOf(iface))
+	rawType := u.DereferencePtrType(reflect.TypeOf(iface))
 	fields := make(map[string]string, 0)
 
 	for i := 0; i < rawType.NumField(); i++ {
@@ -32,7 +31,7 @@ func (g *SchemaGenerator) FromStruct(iface interface{}) map[string]string {
 		if err != nil {
 			log.Printf("ERROR: %s", err)
 		} else {
-			fields[underscore(sf.Name)] = content
+			fields[u.Underscore(sf.Name)] = content
 		}
 	}
 
@@ -40,7 +39,7 @@ func (g *SchemaGenerator) FromStruct(iface interface{}) map[string]string {
 }
 
 func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {
-	kind := dereferencePtrType(sfType).Kind()
+	kind := u.DereferencePtrType(sfType).Kind()
 	var comment, setFunc string
 	s := &schema.Schema{}
 
@@ -69,7 +68,7 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 		}
 		s.Elem = elem
 
-		elemKind := dereferencePtrType(sfType.Elem()).Kind()
+		elemKind := u.DereferencePtrType(sfType.Elem()).Kind()
 		if elemKind == reflect.String {
 			setFunc = "schema.HashString"
 		}
@@ -111,22 +110,6 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 	return schemaCode(s, setFunc, isNested)
 }
 
-func dereferencePtrType(t reflect.Type) reflect.Type {
-	kind := t.Kind()
-	if kind == reflect.Ptr {
-		return dereferencePtrType(t.Elem())
-	}
-	return t
-}
-
-func dereferencePtrValue(v reflect.Value) reflect.Value {
-	kind := v.Kind()
-	if kind == reflect.Ptr {
-		return dereferencePtrValue(v.Elem())
-	}
-	return v
-}
-
 func schemaCode(s *schema.Schema, setFunc string, isNested bool) (string, error) {
 	buf := bytes.NewBuffer([]byte{})
 	err := schemaTemplate.Execute(buf, struct {
@@ -143,22 +126,6 @@ func schemaCode(s *schema.Schema, setFunc string, isNested bool) (string, error)
 	}
 
 	return buf.String(), nil
-}
-
-func underscore(name string) string {
-	var words []string
-	var camelCase = regexp.MustCompile("(^[^A-Z]*|[A-Z]*)([A-Z][^A-Z]+|$)")
-
-	for _, submatch := range camelCase.FindAllStringSubmatch(name, -1) {
-		if submatch[1] != "" {
-			words = append(words, submatch[1])
-		}
-		if submatch[2] != "" {
-			words = append(words, submatch[2])
-		}
-	}
-
-	return strings.ToLower(strings.Join(words, "_"))
 }
 
 var schemaTemplate = template.Must(template.New("schema").Parse(`&schema.Schema{{"{"}}{{if not .IsNested}}
