@@ -54,6 +54,8 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		s.Type = schema.TypeInt
+	case reflect.Float32, reflect.Float64:
+		s.Type = schema.TypeFloat
 	case reflect.String:
 		s.Type = schema.TypeString
 	case reflect.Bool:
