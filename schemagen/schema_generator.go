@@ -61,6 +61,7 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 		s.Type = schema.TypeBool
 	case reflect.Slice:
 		// TODO: TypeList may be more suitable for some situations
+		// TODO: Proper SetFunc may be required for TypeSet
 		s.Type = schema.TypeSet
 		elem, err := g.generateField("", sfType.Elem(), iface, nil, true)
 		if err != nil {
