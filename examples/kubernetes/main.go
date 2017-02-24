@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/radeksimko/terraform-gen/schemagen"
 
-	api "k8s.io/client-go/pkg/api/v1"
+	api "k8s.io/kubernetes/pkg/api/v1"
 )
 
 type schemaGen struct {
