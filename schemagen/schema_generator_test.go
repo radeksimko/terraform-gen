@@ -231,7 +231,7 @@ func TestGenerateField_sliceOfStructs(t *testing.T) {
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
 	expectedSchema := map[string]string{
-		"nested": "&schema.Schema{\nType: schema.TypeSet,\nElem: &schema.Schema{Type: schema.TypeList,\nMaxItems: 1,\nElem: &schema.Resource{\nSchema: map[string]*schema.Schema{\n\"my_int\": &schema.Schema{\nType: schema.TypeInt,\n},\n\"my_string\": &schema.Schema{\nType: schema.TypeString,\n},\n},\n},},\n}",
+		"nested": "&schema.Schema{\nType: schema.TypeSet,\nElem: &schema.Resource{\nSchema: map[string]*schema.Schema{\n\"my_int\": &schema.Schema{\nType: schema.TypeInt,\n},\n\"my_string\": &schema.Schema{\nType: schema.TypeString,\n},\n},\n},\n}",
 		"my_int": "&schema.Schema{\nType: schema.TypeSet,\nElem: &schema.Schema{Type: schema.TypeInt,},\n}",
 	}
 	if !reflect.DeepEqual(schema, expectedSchema) {

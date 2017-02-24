@@ -99,6 +99,10 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 			elem += fmt.Sprintf("%q: %s,\n", k, m[k])
 		}
 		elem += "},\n}"
+		if isNested {
+			return elem, nil
+		}
+
 		s.Elem = elem
 	default:
 		f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
