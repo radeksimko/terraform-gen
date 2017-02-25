@@ -13,7 +13,7 @@ import (
 )
 
 type getDocsFunc func(iface interface{}, sf *reflect.StructField) string
-type filterFunc func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool
+type filterFunc func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool)
 
 type SchemaGenerator struct {
 	DocsFunc   getDocsFunc
@@ -44,7 +44,9 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 	s := &schema.Schema{}
 
 	if sf != nil {
-		if !g.FilterFunc(iface, sf, s) {
+		var ok bool
+		kind, ok = g.FilterFunc(iface, sf, kind, s)
+		if !ok {
 			return "", fmt.Errorf("Skipping %q (filter)", sf.Name)
 		}
 		comment = g.DocsFunc(iface, sf)

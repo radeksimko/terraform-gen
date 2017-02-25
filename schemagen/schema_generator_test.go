@@ -26,7 +26,9 @@ func TestGenerateField_primitive(t *testing.T) {
 		}
 		return docs[sf.Name]
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
@@ -66,7 +68,9 @@ func TestGenerateField_primitivePointers(t *testing.T) {
 		}
 		return docs[sf.Name]
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
@@ -99,7 +103,9 @@ func TestGenerateField_primitiveMixed(t *testing.T) {
 	docsF := func(_struct interface{}, sf *reflect.StructField) string {
 		return ""
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
@@ -132,7 +138,9 @@ func TestGenerateField_sliceOfPrimitives(t *testing.T) {
 	docsF := func(_struct interface{}, sf *reflect.StructField) string {
 		return ""
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
@@ -167,7 +175,9 @@ func TestGenerateField_sliceOfPtrsToPrimitives(t *testing.T) {
 	docsF := func(_struct interface{}, sf *reflect.StructField) string {
 		return ""
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
@@ -200,7 +210,9 @@ func TestGenerateField_struct(t *testing.T) {
 	docsF := func(_struct interface{}, sf *reflect.StructField) string {
 		return ""
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
@@ -226,7 +238,9 @@ func TestGenerateField_sliceOfStructs(t *testing.T) {
 	docsF := func(_struct interface{}, sf *reflect.StructField) string {
 		return ""
 	}
-	filterF := func(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool { return true }
+	filterF := func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		return k, true
+	}
 
 	g := &SchemaGenerator{DocsFunc: docsF, FilterFunc: filterF}
 	schema := g.FromStruct(&SimpleStruct{})
