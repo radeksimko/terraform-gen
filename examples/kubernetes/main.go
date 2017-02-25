@@ -24,35 +24,9 @@ func main() {
 	pkgName := "kubernetes"
 	schemas := []schemaGen{
 		{
-			Obj:          &api.VolumeSource{},
-			Filename:     "volume_source_schema.go",
-			VariableName: "volumeSourceSchema",
-		},
-		{
 			Obj:          &api.PodSpec{},
 			Filename:     "pod_spec_schema.go",
 			VariableName: "podSpecSchema",
-		},
-		// resources
-		{
-			Obj:          &api.Pod{},
-			Filename:     "pod_schema.go",
-			VariableName: "podSchema",
-		},
-		{
-			Obj:          &api.Service{},
-			Filename:     "service_schema.go",
-			VariableName: "serviceSchema",
-		},
-		{
-			Obj:          &api.ReplicationController{},
-			Filename:     "replication_controller_schema.go",
-			VariableName: "replicationControllerSchema",
-		},
-		{
-			Obj:          &api.Namespace{},
-			Filename:     "namespace_schema.go",
-			VariableName: "namespaceSchema",
 		},
 	}
 
@@ -94,13 +68,13 @@ func docsFunc(iface interface{}, sf *reflect.StructField) string {
 	return docs
 }
 
-func filterFunc(iface interface{}, sf *reflect.StructField, s *schema.Schema) bool {
+func filterFunc(iface interface{}, sf *reflect.StructField, kind reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
 	tag := sf.Tag
 	jsonTag := strings.Split(tag.Get("json"), ",")
 	jsonName := jsonTag[0]
 
 	if jsonName == "-" {
-		return false
+		return kind, false
 	}
 
 	t := reflect.TypeOf(iface)
@@ -108,9 +82,19 @@ func filterFunc(iface interface{}, sf *reflect.StructField, s *schema.Schema) bo
 		t = t.Elem()
 	}
 
-	if t.String() == "v1.Time" {
-		log.Printf("Ignoring time field - %q\n", sf.Name)
-		return false
+	if sf.Type.String() == "v1.Time" {
+		log.Printf("Converting %s field to TypeString - %q\n", sf.Type.String(), sf.Name)
+		return reflect.String, true
+	}
+
+	if sf.Type.String() == "resource.Quantity" {
+		log.Printf("Converting %s field to TypeInt - %q\n", sf.Type.String(), sf.Name)
+		return reflect.Int, true
+	}
+
+	if sf.Type.String() == "intstr.IntOrString" {
+		log.Printf("Converting %s field to TypeInt - %q\n", sf.Type.String(), sf.Name)
+		return reflect.Int, true
 	}
 
 	// Pod
@@ -118,38 +102,38 @@ func filterFunc(iface interface{}, sf *reflect.StructField, s *schema.Schema) bo
 		(t.String() == "v1.Pod" && sf.Name == "PodSpec") ||
 		(t.String() == "v1.Volume" && sf.Name == "VolumeSource") {
 		log.Printf("Ignoring %q -> %q (will be implemented as data source)", t.String(), sf.Name)
-		return false
+		return kind, false
 	}
 	// Service
 	if t.String() == "v1.Service" && sf.Name == "Status" {
 		log.Printf("Ignoring %q -> %q (will be implemented as data source)", t.String(), sf.Name)
-		return false
+		return kind, false
 	}
 	// ReplicationController
 	if (t.String() == "v1.PodTemplateSpec" && sf.Name == "Spec") ||
 		(t.String() == "v1.ReplicationController" && sf.Name == "Status") {
 		log.Printf("Ignoring %q -> %q (will be implemented as data source)", t.String(), sf.Name)
-		return false
+		return kind, false
 	}
 
 	docs, err := getSwaggerDocs(iface, sf, jsonName)
 	if err != nil {
-		return true
+		return kind, true
 	}
 
 	if strings.Contains(docs, "Deprecated:") {
 		log.Printf("Ignoring %q (deprecated)\n", sf.Name)
-		return false
+		return kind, false
 	}
 	if strings.Contains(docs, "NOT YET IMPLEMENTED.") {
 		log.Printf("Ignoring %q (not implemented)\n", sf.Name)
-		return false
+		return kind, false
 	}
 
 	if strings.Contains(docs, "Read-only.") {
 		s.Computed = true
 	} else {
-		if strings.Contains(docs, "Required.") {
+		if strings.Contains(docs, "Required.") || strings.Contains(docs, "Required:") {
 			s.Required = true
 		} else {
 			s.Optional = true
@@ -160,7 +144,7 @@ func filterFunc(iface interface{}, sf *reflect.StructField, s *schema.Schema) bo
 		s.ForceNew = true
 	}
 
-	return true
+	return kind, true
 }
 
 func getSwaggerDocs(iface interface{}, sf *reflect.StructField, jsonName string) (string, error) {
@@ -180,7 +164,7 @@ func getSwaggerDocs(iface interface{}, sf *reflect.StructField, jsonName string)
 		}
 		return docs.String(), nil
 	}
-	return "", fmt.Errorf("Docs not found for %q (%s)", sf.Name, sf.Type.String())
+	return "", fmt.Errorf("Docs not found for %s -> %s (%s)", structType.Name(), sf.Name, sf.Type.String())
 }
 
 var podTemplate = template.Must(template.New("pod").Parse(`package {{.PkgName}}
