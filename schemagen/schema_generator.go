@@ -135,7 +135,7 @@ func schemaCode(s *schema.Schema, setFunc string, isNested bool) (string, error)
 	return buf.String(), nil
 }
 
-var schemaTemplate = template.Must(template.New("schema").Parse(`&schema.Schema{{"{"}}{{if not .IsNested}}
+var schemaTemplate = template.Must(template.New("schema").Parse(`{{if .IsNested}}&schema.Schema{{end}}{{"{"}}{{if not .IsNested}}
 {{end}}Type: schema.{{.Schema.Type}},{{if ne .Schema.Description ""}}
 Description: {{printf "%q" .Schema.Description}},{{end}}{{if .Schema.Required}}
 Required: {{.Schema.Required}},{{end}}{{if .Schema.Optional}}
