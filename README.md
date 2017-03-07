@@ -31,7 +31,7 @@ Also `gofmt` is your friend. :shower:
 
 ## Examples
 
-See [`/examples`](https://github.com/radeksimko/terraform-gen/tree/master/examples).
+See [`/_examples`](https://github.com/radeksimko/terraform-gen/tree/master/_examples).
 
 ## License
 
