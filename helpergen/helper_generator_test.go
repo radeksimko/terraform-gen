@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFromStruct_primitives(t *testing.T) {
+func TestFlattenersFromStruct_primitives(t *testing.T) {
 	type SimpleStruct struct {
 		MyInt     int
 		MyInt8    int8
@@ -22,7 +22,7 @@ func TestFromStruct_primitives(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -43,7 +43,7 @@ return att
 	}
 
 	// Pointer
-	ptrOutput := hg.FromStruct(&SimpleStruct{})
+	ptrOutput := hg.FlattenersFromStruct(&SimpleStruct{})
 	expectedPtrOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in *helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -81,7 +81,7 @@ func TestFromSliceOfStructs_primitives(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct([]SimpleStruct{})
+	output := hg.FlattenersFromStruct([]SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in []helpergen.SimpleStruct) []map[string]interface{} {
 att := make([]map[string]interface{}, len(in), len(in))
@@ -106,7 +106,7 @@ return att
 	}
 }
 
-func TestFromStruct_ptrsToPrimitives(t *testing.T) {
+func TestFlattenersFromStruct_ptrsToPrimitives(t *testing.T) {
 	type SimpleStruct struct {
 		MyInt     *int
 		MyInt8    *int8
@@ -123,7 +123,7 @@ func TestFromStruct_ptrsToPrimitives(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -144,7 +144,7 @@ return att
 	}
 }
 
-func TestFromStruct_nestedSingleLevel(t *testing.T) {
+func TestFlattenersFromStruct_nestedSingleLevel(t *testing.T) {
 	type NestedStruct struct {
 		NestedInt    int
 		NestedString string
@@ -160,7 +160,7 @@ func TestFromStruct_nestedSingleLevel(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -182,7 +182,7 @@ return att
 	}
 }
 
-func TestFromStruct_ptrNestedSingleLevel(t *testing.T) {
+func TestFlattenersFromStruct_ptrNestedSingleLevel(t *testing.T) {
 	type NestedStruct struct {
 		NestedInt    int
 		NestedString string
@@ -198,7 +198,7 @@ func TestFromStruct_ptrNestedSingleLevel(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -220,7 +220,7 @@ return att
 	}
 }
 
-func TestFromStruct_primitiveSlice(t *testing.T) {
+func TestFlattenersFromStruct_primitiveSlice(t *testing.T) {
 	type SimpleStruct struct {
 		SliceOfInt     []int
 		SliceOfString  []string
@@ -232,7 +232,7 @@ func TestFromStruct_primitiveSlice(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -248,7 +248,7 @@ return att
 	}
 }
 
-func TestFromStruct_primitivePtrSlice(t *testing.T) {
+func TestFlattenersFromStruct_primitivePtrSlice(t *testing.T) {
 	type SimpleStruct struct {
 		SliceOfInt     []*int
 		SliceOfString  []*string
@@ -260,7 +260,7 @@ func TestFromStruct_primitivePtrSlice(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})
@@ -276,7 +276,7 @@ return att
 	}
 }
 
-func TestFromStruct_sliceOfStructs(t *testing.T) {
+func TestFlattenersFromStruct_sliceOfStructs(t *testing.T) {
 	type NestedStruct struct {
 		SimpleString string
 		SimpleBool   bool
@@ -291,7 +291,7 @@ func TestFromStruct_sliceOfStructs(t *testing.T) {
 		OutputVarName: "att",
 	}
 
-	output := hg.FromStruct(SimpleStruct{})
+	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
 att := make(map[string]interface{})

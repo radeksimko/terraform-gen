@@ -37,7 +37,7 @@ func main() {
 			OutputVarName: "att",
 		}
 
-		functions := hg.FromStruct(s.Obj)
+		functions := hg.FlattenersFromStruct(s.Obj)
 
 		err = tpl.Execute(f, struct {
 			PkgName   string
