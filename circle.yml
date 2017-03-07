@@ -1,0 +1,4 @@
+test:
+  override:
+    - exit $(gofmt -l . | wc -l | tr -d ' ')
+    - go test -v ./...
