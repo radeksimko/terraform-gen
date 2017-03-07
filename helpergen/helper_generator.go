@@ -20,13 +20,15 @@ type FunctionDeclaration struct {
 	FuncBody  string
 }
 
-type filterFunc func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool)
+type fieldFilterFunc func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool)
 
 type HelperGenerator struct {
-	FilterFunc    filterFunc
-	InputVarName  string
-	OutputVarName string
+	FieldFilterFunc fieldFilterFunc
+	InputVarName    string
+	OutputVarName   string
 
+	mapVarName   string
+	mapValueName string
 	declarations map[string]*FunctionDeclaration
 }
 
@@ -34,8 +36,14 @@ func (hg *HelperGenerator) FromStruct(iface interface{}) map[string]string {
 	if hg.declarations == nil {
 		hg.declarations = make(map[string]*FunctionDeclaration)
 	}
-	if hg.FilterFunc == nil {
-		hg.FilterFunc = noFilter
+	if hg.FieldFilterFunc == nil {
+		hg.FieldFilterFunc = noFieldFilter
+	}
+	if hg.mapVarName == "" {
+		hg.mapVarName = hg.OutputVarName
+	}
+	if hg.mapValueName == "" {
+		hg.mapValueName = hg.InputVarName
 	}
 
 	hg.generateDeclarationsFromStruct(iface)
@@ -57,8 +65,7 @@ func (hg *HelperGenerator) generateDeclarationsFromStruct(iface interface{}) str
 	rawType := getRawType(t)
 
 	funcName := flattenerFuncNameFromType(t)
-	funcBody := hg.OutputVarName + " := make(map[string]interface{})\n"
-
+	funcBody := hg.funcDeclarationBeginning(t)
 	for i := 0; i < rawType.NumField(); i++ {
 		sf := rawType.Field(i)
 		body, err := hg.generateFlattenerFieldCode(sf.Name, sf.Type, iface, &sf, false)
@@ -68,8 +75,7 @@ func (hg *HelperGenerator) generateDeclarationsFromStruct(iface interface{}) str
 		}
 		funcBody += body
 	}
-
-	funcBody += "return " + returnCodeFromType(hg.OutputVarName, t)
+	funcBody += hg.funcDeclarationEnd(t)
 
 	hg.declarations[funcName] = &FunctionDeclaration{
 		PkgPath:   t.PkgPath(),
@@ -82,16 +88,48 @@ func (hg *HelperGenerator) generateDeclarationsFromStruct(iface interface{}) str
 	return funcName
 }
 
+func (hg *HelperGenerator) funcDeclarationBeginning(t reflect.Type) string {
+	if t.Kind() == reflect.Slice {
+		body := hg.mapVarName + ` := make([]map[string]interface{}, len(in), len(in))
+for i, n := range in {
+m := make(map[string]interface{})
+`
+		hg.mapVarName = "m"
+		hg.mapValueName = "n"
+		return body
+	}
+
+	return hg.mapVarName + " := make(map[string]interface{})\n"
+}
+
+func (hg *HelperGenerator) funcDeclarationEnd(t reflect.Type) string {
+	if t.Kind() == reflect.Slice {
+		body := hg.OutputVarName + `[i] = ` + hg.mapVarName + `
+}
+return ` + hg.OutputVarName
+		hg.mapVarName = ""
+		hg.mapValueName = ""
+		return body
+	}
+
+	return `return ` + hg.OutputVarName
+}
+
 func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {
 	kind := u.DereferencePtrType(sfType).Kind()
 	s := &schema.Schema{}
 
 	if sf != nil {
 		var ok bool
-		kind, ok = hg.FilterFunc(iface, sf, kind, s)
+		kind, ok = hg.FieldFilterFunc(iface, sf, kind, s)
 		if !ok {
 			return "", fmt.Errorf("Skipping %q (filter)", sf.Name)
 		}
+	}
+
+	inputVarName := hg.InputVarName
+	if hg.mapValueName != "" {
+		inputVarName = hg.mapValueName
 	}
 
 	value := "// TODO"
@@ -103,24 +141,93 @@ func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType refl
 		if sfType.Kind() == reflect.Ptr {
 			sfPtr = "*"
 		}
-		value = fmt.Sprintf("%s%s.%s", sfPtr, hg.InputVarName, sf.Name)
+		value = fmt.Sprintf("%s%s.%s", sfPtr, inputVarName, sf.Name)
 	case reflect.Map:
 		// TODO: map[string]*string
-		value = fmt.Sprintf("%s.%s", hg.InputVarName, sf.Name)
-	// TODO: case reflect.Slice:
+		value = fmt.Sprintf("%s.%s", inputVarName, sf.Name)
+	case reflect.Slice:
+		// TODO: s.Type == TypeSet
+		sliceOf := sfType.Elem()
+		switch sliceOf.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Float32, reflect.Float64, reflect.String, reflect.Bool:
+			// Slice of primitive data types
+			value = fmt.Sprintf("%s.%s", inputVarName, sf.Name)
+		case reflect.Ptr:
+			ptrTo := sliceOf.Elem()
+			funcName := hg.slicePtrHelperFuncNameForType(ptrTo, sfType)
+			value = fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name)
+		case reflect.Struct:
+			iface := reflect.New(sfType).Elem().Interface()
+			funcName := hg.generateDeclarationsFromStruct(iface)
+			value = fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name)
+		default:
+			f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
+			return "", fmt.Errorf("Unable to process: %s", f)
+		}
 	case reflect.Struct:
 		iface := reflect.New(sfType).Elem().Interface()
 		funcName := hg.generateDeclarationsFromStruct(iface)
-		value = fmt.Sprintf("%s(%s.%s)", funcName, hg.InputVarName, sf.Name)
+		value = fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name)
 	default:
 		f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
 		return "", fmt.Errorf("Unable to process: %s", f)
 	}
 
-	// TODO: Optional
+	leftSide := fmt.Sprintf("%s[%q]", hg.OutputVarName, u.Underscore(sf.Name))
+	if hg.mapVarName != "" {
+		leftSide = fmt.Sprintf("%s[%q]", hg.mapVarName, u.Underscore(sf.Name))
+	}
 
-	return fmt.Sprintf("%s[%q] = %s\n",
-		hg.OutputVarName, u.Underscore(sf.Name), value), nil
+	if s.Optional && !s.Computed {
+		emptyValue, err := emptyConditionForType(inputVarName, sf)
+		if err != nil {
+			log.Printf("Unknown optional condition: %s", err)
+		}
+		body := fmt.Sprintf("if %s {\n", emptyValue)
+		body += fmt.Sprintf("%s = %s\n", leftSide, value)
+		body += "}\n"
+		return body, nil
+	}
+
+	return fmt.Sprintf("%s = %s\n", leftSide, value), nil
+}
+
+func emptyConditionForType(inputVarName string, sf *reflect.StructField) (string, error) {
+	leftSide := inputVarName + "." + sf.Name
+
+	switch sf.Type.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Float32, reflect.Float64, reflect.Bool:
+		val := reflect.Zero(sf.Type)
+		return fmt.Sprintf("%s == %v", leftSide, val.Interface()), nil
+	case reflect.String:
+		return fmt.Sprintf(`%s == ""`, leftSide), nil
+	case reflect.Ptr:
+		return fmt.Sprintf("%s == nil", leftSide), nil
+	case reflect.Slice, reflect.Map:
+		return fmt.Sprintf("len(%s) > 0", leftSide), nil
+	}
+
+	f := fmt.Sprintf("%s\n", sf.Type.String())
+	return fmt.Sprintf(`%s == /* unknown */`, leftSide), fmt.Errorf("Unable to process: %s", f)
+}
+
+func (hg *HelperGenerator) slicePtrHelperFuncNameForType(t reflect.Type, sfType reflect.Type) string {
+	switch t.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return "flattenIntSlice"
+	case reflect.Float32, reflect.Float64:
+		return "flattenFloatSlice"
+	case reflect.String:
+		return "flattenStringSlice"
+	case reflect.Bool:
+		return "flattenBoolSlice"
+	case reflect.Struct:
+		iface := reflect.New(sfType).Elem().Interface()
+		return hg.generateDeclarationsFromStruct(iface)
+	}
+	return ""
 }
 
 func flattenerFuncNameFromType(t reflect.Type) string {
@@ -154,13 +261,6 @@ func argumentSignatureFromType(argName string, t reflect.Type) string {
 	return argName + " " + slice + ptr + t.String()
 }
 
-func returnCodeFromType(varName string, t reflect.Type) string {
-	if t.Kind() == reflect.Slice {
-		return "[]map[string]interface{}{" + varName + "}"
-	}
-	return varName
-}
-
 func returnInterfacesFromType(t reflect.Type) string {
 	if t.Kind() == reflect.Slice {
 		return "[]map[string]interface{}"
@@ -168,7 +268,7 @@ func returnInterfacesFromType(t reflect.Type) string {
 	return "map[string]interface{}"
 }
 
-func noFilter(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+func noFieldFilter(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
 	return k, true
 }
 
