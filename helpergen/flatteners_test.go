@@ -64,7 +64,7 @@ return att
 	}
 }
 
-func TestFromSliceOfStructs_primitives(t *testing.T) {
+func TestFlattenersFromSliceOfStructs_primitives(t *testing.T) {
 	type SimpleStruct struct {
 		MyInt     int
 		MyInt8    int8
