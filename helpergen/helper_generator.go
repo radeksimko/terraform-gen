@@ -88,7 +88,7 @@ func getRawType(t reflect.Type) reflect.Type {
 	return t
 }
 
-func argumentSignatureFromType(argName string, t reflect.Type) string {
+func interfaceFromType(t reflect.Type) string {
 	ptr := ""
 	slice := ""
 	if t.Kind() == reflect.Slice {
@@ -99,10 +99,10 @@ func argumentSignatureFromType(argName string, t reflect.Type) string {
 		ptr = "*"
 		t = t.Elem()
 	}
-	return argName + " " + slice + ptr + t.String()
+	return slice + ptr + t.String()
 }
 
-func returnInterfacesFromType(t reflect.Type) string {
+func mapInterfacesFromType(t reflect.Type) string {
 	if t.Kind() == reflect.Slice {
 		return "[]map[string]interface{}"
 	}

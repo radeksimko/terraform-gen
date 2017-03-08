@@ -36,8 +36,8 @@ func (hg *HelperGenerator) generateFlattenersFromStruct(iface interface{}) strin
 	hg.declarations[funcName] = &FunctionDeclaration{
 		PkgPath:   t.PkgPath(),
 		FuncName:  funcName,
-		Arguments: argumentSignatureFromType(hg.InputVarName, t),
-		Outputs:   returnInterfacesFromType(t),
+		Arguments: hg.InputVarName + " " + interfaceFromType(t),
+		Outputs:   mapInterfacesFromType(t),
 		FuncBody:  funcBody,
 	}
 
