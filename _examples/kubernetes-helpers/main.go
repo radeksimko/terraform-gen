@@ -37,14 +37,17 @@ func main() {
 			OutputVarName: "att",
 		}
 
-		functions := hg.FlattenersFromStruct(s.Obj)
+		flatteners := hg.FlattenersFromStruct(s.Obj)
+		expanders := hg.ExpandersFromStruct(s.Obj)
 
 		err = tpl.Execute(f, struct {
-			PkgName   string
-			Functions map[string]string
+			PkgName    string
+			Flatteners map[string]string
+			Expanders  map[string]string
 		}{
-			PkgName:   pkgName,
-			Functions: functions,
+			PkgName:    pkgName,
+			Flatteners: flatteners,
+			Expanders:  expanders,
 		})
 		if err != nil {
 			log.Fatal(err)
@@ -54,7 +57,13 @@ func main() {
 
 var tpl = template.Must(template.New("pod").Parse(`package {{.PkgName}}
 
-{{range $name, $definition := .Functions}}
+// Flatteners
+{{range $name, $definition := .Flatteners}}
+{{ $definition }}
+{{end}}
+
+// Expanders
+{{range $name, $definition := .Expanders}}
 {{ $definition }}
 {{end}}
 `))
