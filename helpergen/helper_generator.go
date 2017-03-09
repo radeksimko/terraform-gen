@@ -31,9 +31,7 @@ type HelperGenerator struct {
 }
 
 func (hg *HelperGenerator) init() {
-	if hg.declarations == nil {
-		hg.declarations = make(map[string]*FunctionDeclaration)
-	}
+	hg.declarations = make(map[string]*FunctionDeclaration)
 	if hg.FieldFilterFunc == nil {
 		hg.FieldFilterFunc = noFieldFilter
 	}
