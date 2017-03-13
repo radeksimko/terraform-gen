@@ -77,6 +77,10 @@ func (g *SchemaGenerator) generateField(sfName string, sfType reflect.Type, ifac
 		}
 	case reflect.Map:
 		s.Type = schema.TypeMap
+		// TODO: Elem(map[string]string)
+		// TODO: Elem(map[string]int)
+		// TODO: Elem(map[string]bool)
+		// TODO: Elem(map[string]float)
 	case reflect.Struct:
 		structType := sfType
 		if structType.Kind() == reflect.Ptr {
