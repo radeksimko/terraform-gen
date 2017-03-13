@@ -101,10 +101,7 @@ func interfaceFromType(t reflect.Type) string {
 }
 
 func mapInterfacesFromType(t reflect.Type) string {
-	if t.Kind() == reflect.Slice {
-		return "[]map[string]interface{}"
-	}
-	return "map[string]interface{}"
+	return "[]interface{}"
 }
 
 func noFieldFilter(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {

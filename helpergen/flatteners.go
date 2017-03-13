@@ -46,7 +46,7 @@ func (hg *HelperGenerator) generateFlattenersFromStruct(iface interface{}) strin
 
 func (hg *HelperGenerator) flattenerDeclarationBeginning(t reflect.Type) string {
 	if t.Kind() == reflect.Slice {
-		body := hg.mapVarName + ` := make([]map[string]interface{}, len(in), len(in))
+		body := hg.mapVarName + ` := make([]interface{}, len(in), len(in))
 for i, n := range in {
 m := make(map[string]interface{})
 `
@@ -68,7 +68,7 @@ return ` + hg.OutputVarName
 		return body
 	}
 
-	return `return ` + hg.OutputVarName
+	return `return []interface{}{` + hg.OutputVarName + `}`
 }
 
 func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {

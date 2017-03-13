@@ -24,7 +24,7 @@ func TestFlattenersFromStruct_primitives(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["my_int"] = in.MyInt
 att["my_int8"] = in.MyInt8
@@ -35,7 +35,7 @@ att["my_float32"] = in.MyFloat32
 att["my_float64"] = in.MyFloat64
 att["my_string"] = in.MyString
 att["my_bool"] = in.MyBool
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {
@@ -45,7 +45,7 @@ return att
 	// Pointer
 	ptrOutput := hg.FlattenersFromStruct(&SimpleStruct{})
 	expectedPtrOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in *helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in *helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["my_int"] = in.MyInt
 att["my_int8"] = in.MyInt8
@@ -56,7 +56,7 @@ att["my_float32"] = in.MyFloat32
 att["my_float64"] = in.MyFloat64
 att["my_string"] = in.MyString
 att["my_bool"] = in.MyBool
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(ptrOutput, expectedPtrOutput) {
@@ -83,8 +83,8 @@ func TestFlattenersFromSliceOfStructs_primitives(t *testing.T) {
 
 	output := hg.FlattenersFromStruct([]SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in []helpergen.SimpleStruct) []map[string]interface{} {
-att := make([]map[string]interface{}, len(in), len(in))
+		"flattenSimpleStruct": `func flattenSimpleStruct(in []helpergen.SimpleStruct) []interface{} {
+att := make([]interface{}, len(in), len(in))
 for i, n := range in {
 m := make(map[string]interface{})
 m["my_int"] = n.MyInt
@@ -125,7 +125,7 @@ func TestFlattenersFromStruct_ptrsToPrimitives(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["my_int"] = *in.MyInt
 att["my_int8"] = *in.MyInt8
@@ -136,7 +136,7 @@ att["my_float32"] = *in.MyFloat32
 att["my_float64"] = *in.MyFloat64
 att["my_string"] = *in.MyString
 att["my_bool"] = *in.MyBool
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {
@@ -162,19 +162,19 @@ func TestFlattenersFromStruct_nestedSingleLevel(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["my_int"] = in.MyInt
 att["my_string"] = in.MyString
 att["my_bool"] = in.MyBool
 att["my_nested"] = flattenNestedStruct(in.MyNested)
-return att
+return []interface{}{att}
 }`,
-		"flattenNestedStruct": `func flattenNestedStruct(in helpergen.NestedStruct) map[string]interface{} {
+		"flattenNestedStruct": `func flattenNestedStruct(in helpergen.NestedStruct) []interface{} {
 att := make(map[string]interface{})
 att["nested_int"] = in.NestedInt
 att["nested_string"] = in.NestedString
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {
@@ -200,19 +200,19 @@ func TestFlattenersFromStruct_ptrNestedSingleLevel(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["my_int"] = in.MyInt
 att["my_string"] = in.MyString
 att["my_bool"] = in.MyBool
 att["my_nested"] = flattenNestedStruct(in.MyNested)
-return att
+return []interface{}{att}
 }`,
-		"flattenNestedStruct": `func flattenNestedStruct(in *helpergen.NestedStruct) map[string]interface{} {
+		"flattenNestedStruct": `func flattenNestedStruct(in *helpergen.NestedStruct) []interface{} {
 att := make(map[string]interface{})
 att["nested_int"] = in.NestedInt
 att["nested_string"] = in.NestedString
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {
@@ -234,13 +234,13 @@ func TestFlattenersFromStruct_primitiveSlice(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["slice_of_int"] = in.SliceOfInt
 att["slice_of_string"] = in.SliceOfString
 att["slice_of_bool"] = in.SliceOfBool
 att["slice_of_float64"] = in.SliceOfFloat64
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {
@@ -262,13 +262,13 @@ func TestFlattenersFromStruct_primitivePtrSlice(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["slice_of_int"] = flattenIntSlice(in.SliceOfInt)
 att["slice_of_string"] = flattenStringSlice(in.SliceOfString)
 att["slice_of_bool"] = flattenBoolSlice(in.SliceOfBool)
 att["slice_of_float64"] = flattenFloatSlice(in.SliceOfFloat64)
-return att
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {
@@ -293,14 +293,14 @@ func TestFlattenersFromStruct_sliceOfStructs(t *testing.T) {
 
 	output := hg.FlattenersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
-		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) map[string]interface{} {
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
 att := make(map[string]interface{})
 att["simple_int"] = in.SimpleInt
 att["slice_of_structs"] = flattenNestedStruct(in.SliceOfStructs)
-return att
+return []interface{}{att}
 }`,
-		"flattenNestedStruct": `func flattenNestedStruct(in []helpergen.NestedStruct) []map[string]interface{} {
-att := make([]map[string]interface{}, len(in), len(in))
+		"flattenNestedStruct": `func flattenNestedStruct(in []helpergen.NestedStruct) []interface{} {
+att := make([]interface{}, len(in), len(in))
 for i, n := range in {
 m := make(map[string]interface{})
 m["simple_string"] = n.SimpleString
