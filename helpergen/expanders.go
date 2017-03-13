@@ -12,19 +12,19 @@ import (
 
 func (hg *HelperGenerator) ExpandersFromStruct(iface interface{}) map[string]string {
 	hg.init()
-	hg.generateExpandersFromStruct(iface, false)
+	hg.generateExpandersFromStruct(iface)
 	return hg.renderDeclarations()
 }
 
-func (hg *HelperGenerator) generateExpandersFromStruct(iface interface{}, isNested bool) string {
+func (hg *HelperGenerator) generateExpandersFromStruct(iface interface{}) string {
 	t := reflect.TypeOf(iface)
 	rawType := getRawType(t)
 
 	funcName := expanderFuncNameFromType(t)
-	funcBody := hg.expanderDeclarationBeginning(t, isNested)
+	funcBody := hg.expanderDeclarationBeginning(t)
 	for i := 0; i < rawType.NumField(); i++ {
 		sf := rawType.Field(i)
-		body, err := hg.generateExpanderFieldCode(sf.Name, sf.Type, iface, &sf, false)
+		body, err := hg.generateExpanderFieldCode(sf.Name, sf.Type, iface, &sf)
 		if err != nil {
 			log.Printf("Skipping %s: %s", sf.Name, err)
 			continue
@@ -33,10 +33,7 @@ func (hg *HelperGenerator) generateExpandersFromStruct(iface interface{}, isNest
 	}
 	funcBody += hg.expanderDeclarationEnd(t)
 
-	args := hg.InputVarName + " " + mapInterfacesFromType(t)
-	if isNested {
-		args = "l" + " []interface{}"
-	}
+	args := "l" + " []interface{}"
 
 	hg.declarations[funcName] = &FunctionDeclaration{
 		PkgPath:   t.PkgPath(),
@@ -49,7 +46,7 @@ func (hg *HelperGenerator) generateExpandersFromStruct(iface interface{}, isNest
 	return funcName
 }
 
-func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {
+func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField) (string, error) {
 	kind := u.DereferencePtrType(sfType).Kind()
 	s := &schema.Schema{}
 
@@ -94,7 +91,7 @@ func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType refle
 			rightSide = fmt.Sprintf("%s(%s[%q].([]interface{}))", funcName, hg.InputVarName, u.Underscore(sf.Name))
 		case reflect.Struct:
 			iface := reflect.New(sfType).Elem().Interface()
-			funcName := hg.generateExpandersFromStruct(iface, true)
+			funcName := hg.generateExpandersFromStruct(iface)
 			rightSide = fmt.Sprintf("%s(%s[%q].([]interface{}))", funcName, hg.InputVarName, u.Underscore(sf.Name))
 		default:
 			f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
@@ -102,7 +99,7 @@ func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType refle
 		}
 	case reflect.Struct:
 		iface := reflect.New(sfType).Elem().Interface()
-		funcName := hg.generateExpandersFromStruct(iface, true)
+		funcName := hg.generateExpandersFromStruct(iface)
 		rightSide = fmt.Sprintf("%s(%s[%q].([]interface{}))", funcName, hg.InputVarName, u.Underscore(sf.Name))
 	default:
 		f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
@@ -114,7 +111,7 @@ func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType refle
 	return fmt.Sprintf("%s: %s,\n", leftSide, rightSide), nil
 }
 
-func (hg *HelperGenerator) expanderDeclarationBeginning(t reflect.Type, isNested bool) string {
+func (hg *HelperGenerator) expanderDeclarationBeginning(t reflect.Type) string {
 	code := ""
 	if t.Kind() == reflect.Slice {
 		ptr := ""
@@ -128,16 +125,15 @@ obj[i] = ` + ptr + `helpergen.NestedStruct{
 `
 		hg.mapVarName = "cfg"
 		return code
-	} else {
-		if isNested {
-			code += hg.InputVarName + " := l[0].(map[string]interface{})\n"
-		}
-		if t.Kind() == reflect.Ptr {
-			// Pointer will be created at return stage
-			t = t.Elem()
-		}
-		return code + "obj := " + t.String() + "{\n"
 	}
+
+	// TODO: if len(l) > 0
+	code += hg.InputVarName + " := l[0].(map[string]interface{})\n"
+	if t.Kind() == reflect.Ptr {
+		// Pointer will be created at return stage
+		t = t.Elem()
+	}
+	return code + "obj := " + t.String() + "{\n"
 }
 
 func (hg *HelperGenerator) expanderDeclarationEnd(t reflect.Type) string {
@@ -178,7 +174,7 @@ func (hg *HelperGenerator) primitiveSliceExpanderForType(t reflect.Type, sfType 
 		return "sliceOfBool"
 	case reflect.Struct:
 		iface := reflect.New(sfType).Elem().Interface()
-		return hg.generateExpandersFromStruct(iface, true)
+		return hg.generateExpandersFromStruct(iface)
 	}
 	return ""
 }
