@@ -117,21 +117,37 @@ func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType refle
 func (hg *HelperGenerator) expanderDeclarationBeginning(t reflect.Type) string {
 	code := ""
 	if t.Kind() == reflect.Slice {
+		code += `if len(l) == 0 || l[0] == nil {
+return ` + t.String() + `{}
+}
+obj := make(` + t.String() + `, len(l), len(l))
+`
 		ptr := ""
-		if t.Elem().Kind() == reflect.Ptr {
+		t := t.Elem()
+		if t.Kind() == reflect.Ptr {
 			ptr = "&"
+			t = t.Elem()
 		}
-		code += `obj := make([]helpergen.NestedStruct, len(l), len(l))
-for i, n := range l {
+
+		code += `for i, n := range l {
 cfg := n.(map[string]interface{})
-obj[i] = ` + ptr + `helpergen.NestedStruct{
+obj[i] = ` + ptr + t.String() + `{
 `
 		hg.mapVarName = "cfg"
 		return code
 	}
 
-	// TODO: if len(l) > 0
-	code += hg.InputVarName + " := l[0].(map[string]interface{})\n"
+	ptr := ""
+	if t.Kind() == reflect.Ptr {
+		ptr = "&"
+		t = t.Elem()
+	}
+
+	code += `if len(l) == 0 || l[0] == nil {
+return ` + ptr + t.String() + `{}
+}
+` + hg.InputVarName + " := l[0].(map[string]interface{})\n"
+
 	if t.Kind() == reflect.Ptr {
 		// Pointer will be created at return stage
 		t = t.Elem()

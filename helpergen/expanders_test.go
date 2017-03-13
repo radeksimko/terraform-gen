@@ -25,6 +25,9 @@ func TestExpanderFromStruct_primitives(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 MyInt: cfg["my_int"].(int),
@@ -65,6 +68,9 @@ func TestExpanderFromPtrToStruct_primitives(t *testing.T) {
 	output := hg.ExpandersFromStruct(&SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) *helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return &helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 MyInt: cfg["my_int"].(int),
@@ -105,6 +111,9 @@ func TestExpanderFromPtrToStruct_ptrsToPrimitives(t *testing.T) {
 	output := hg.ExpandersFromStruct(&SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) *helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return &helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 MyInt: ptrToInt(cfg["my_int"].(int)),
@@ -139,6 +148,9 @@ func TestExpanderFromStruct_stringMap(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 MyInt: cfg["my_int"].(int),
@@ -172,6 +184,9 @@ func TestExpanderFromStruct_primitiveSlices(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 SliceOfInt: sliceOfInt(cfg["slice_of_int"].([]interface{})),
@@ -210,6 +225,9 @@ func TestExpanderFromStruct_primitivePtrSlices(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 SliceOfInt: sliceOfPtrInt(cfg["slice_of_int"].([]interface{})),
@@ -247,6 +265,9 @@ func TestExpanderFromStruct_structSlice(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 NestedSlice: expandNestedStruct(cfg["nested_slice"].([]interface{})),
@@ -256,6 +277,9 @@ SimpleString: cfg["simple_string"].(string),
 return obj
 }`,
 		"expandNestedStruct": `func expandNestedStruct(l []interface{}) []helpergen.NestedStruct {
+if len(l) == 0 || l[0] == nil {
+return []helpergen.NestedStruct{}
+}
 obj := make([]helpergen.NestedStruct, len(l), len(l))
 for i, n := range l {
 cfg := n.(map[string]interface{})
@@ -290,6 +314,9 @@ func TestExpanderFromStruct_structPtrSlice(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 NestedSlice: expandNestedStruct(cfg["nested_slice"].([]interface{})),
@@ -299,7 +326,10 @@ SimpleString: cfg["simple_string"].(string),
 return obj
 }`,
 		"expandNestedStruct": `func expandNestedStruct(l []interface{}) []*helpergen.NestedStruct {
-obj := make([]helpergen.NestedStruct, len(l), len(l))
+if len(l) == 0 || l[0] == nil {
+return []*helpergen.NestedStruct{}
+}
+obj := make([]*helpergen.NestedStruct, len(l), len(l))
 for i, n := range l {
 cfg := n.(map[string]interface{})
 obj[i] = &helpergen.NestedStruct{
@@ -334,6 +364,9 @@ func TestExpanderFromStruct_nestedStruct(t *testing.T) {
 	output := hg.ExpandersFromStruct(SimpleStruct{})
 	expectedOutput := map[string]string{
 		"expandSimpleStruct": `func expandSimpleStruct(l []interface{}) helpergen.SimpleStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.SimpleStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.SimpleStruct{
 MyInt: cfg["my_int"].(int),
@@ -344,6 +377,9 @@ MyNested: expandNestedStruct(cfg["my_nested"].([]interface{})),
 return obj
 }`,
 		"expandNestedStruct": `func expandNestedStruct(l []interface{}) helpergen.NestedStruct {
+if len(l) == 0 || l[0] == nil {
+return helpergen.NestedStruct{}
+}
 cfg := l[0].(map[string]interface{})
 obj := helpergen.NestedStruct{
 NestedInt: cfg["nested_int"].(int),
