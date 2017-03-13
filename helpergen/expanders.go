@@ -75,6 +75,9 @@ func (hg *HelperGenerator) generateExpanderFieldCode(sfName string, sfType refle
 		}
 	case reflect.Map:
 		// TODO: map[string]*string
+		// TODO: map[string]int
+		// TODO: map[string]bool
+		// TODO: map[string]float
 		rightSide = fmt.Sprintf("expandStringMap(%s[%q].(map[string]interface{}))", hg.InputVarName, u.Underscore(sf.Name))
 	case reflect.Slice:
 		// TODO: s.Type == TypeSet

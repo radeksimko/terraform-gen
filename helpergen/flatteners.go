@@ -100,6 +100,10 @@ func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType refl
 		value = fmt.Sprintf("%s%s.%s", sfPtr, inputVarName, sf.Name)
 	case reflect.Map:
 		// TODO: map[string]*string
+		// TODO: map[string]*string
+		// TODO: map[string]int
+		// TODO: map[string]bool
+		// TODO: map[string]float
 		value = fmt.Sprintf("%s.%s", inputVarName, sf.Name)
 	case reflect.Slice:
 		// TODO: s.Type == TypeSet
