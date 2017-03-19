@@ -14,6 +14,9 @@ func TestExpanderFromStruct_primitives(t *testing.T) {
 		MyInt16   int16
 		MyInt32   int32
 		MyInt64   int64
+		MyUInt    uint
+		MyUInt32  uint32
+		MyUInt64  uint64
 		MyFloat32 float32
 		MyFloat64 float64
 		MyString  string
@@ -37,6 +40,9 @@ MyInt8: cfg["my_int8"].(int8),
 MyInt16: cfg["my_int16"].(int16),
 MyInt32: cfg["my_int32"].(int32),
 MyInt64: cfg["my_int64"].(int64),
+MyUInt: cfg["my_u_int"].(uint),
+MyUInt32: cfg["my_u_int32"].(uint32),
+MyUInt64: cfg["my_u_int64"].(uint64),
 MyFloat32: cfg["my_float32"].(float32),
 MyFloat64: cfg["my_float64"].(float64),
 MyString: cfg["my_string"].(string),
@@ -100,6 +106,9 @@ func TestExpanderFromPtrToStruct_ptrsToPrimitives(t *testing.T) {
 		MyInt16   *int16
 		MyInt32   *int32
 		MyInt64   *int64
+		MyUInt    *uint
+		MyUInt32  *uint32
+		MyUInt64  *uint64
 		MyFloat32 *float32
 		MyFloat64 *float64
 		MyString  *string
@@ -123,6 +132,9 @@ MyInt8: ptrToInt8(cfg["my_int8"].(int8)),
 MyInt16: ptrToInt16(cfg["my_int16"].(int16)),
 MyInt32: ptrToInt32(cfg["my_int32"].(int32)),
 MyInt64: ptrToInt64(cfg["my_int64"].(int64)),
+MyUInt: ptrToUint(cfg["my_u_int"].(uint)),
+MyUInt32: ptrToUint32(cfg["my_u_int32"].(uint32)),
+MyUInt64: ptrToUint64(cfg["my_u_int64"].(uint64)),
 MyFloat32: ptrToFloat32(cfg["my_float32"].(float32)),
 MyFloat64: ptrToFloat64(cfg["my_float64"].(float64)),
 MyString: ptrToString(cfg["my_string"].(string)),

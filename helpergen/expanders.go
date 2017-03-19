@@ -148,6 +148,7 @@ func (hg *HelperGenerator) outlineExpanderField(sfName string, sfType reflect.Ty
 func (hg *HelperGenerator) expanderFieldValue(kind reflect.Kind, sf *reflect.StructField, sfName string, sfType reflect.Type) (string, string, error) {
 	switch kind {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Float32, reflect.Float64, reflect.String, reflect.Bool:
 		castType := sfType.String()
 

@@ -65,6 +65,7 @@ func emptyConditionForType(inputVarName string, sf *reflect.StructField) (string
 
 	switch sf.Type.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Float32, reflect.Float64, reflect.Bool:
 		val := reflect.Zero(sf.Type)
 		return fmt.Sprintf("%s != %v", leftSide, val.Interface()), nil

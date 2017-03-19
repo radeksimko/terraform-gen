@@ -14,6 +14,9 @@ func TestFlattenersFromStruct_primitives(t *testing.T) {
 		MyInt16   int16
 		MyInt32   int32
 		MyInt64   int64
+		MyUInt    uint
+		MyUInt32  uint32
+		MyUInt64  uint64
 		MyFloat32 float32
 		MyFloat64 float64
 		MyString  string
@@ -33,6 +36,9 @@ att["my_int8"] = in.MyInt8
 att["my_int16"] = in.MyInt16
 att["my_int32"] = in.MyInt32
 att["my_int64"] = in.MyInt64
+att["my_u_int"] = in.MyUInt
+att["my_u_int32"] = in.MyUInt32
+att["my_u_int64"] = in.MyUInt64
 att["my_float32"] = in.MyFloat32
 att["my_float64"] = in.MyFloat64
 att["my_string"] = in.MyString
@@ -54,6 +60,9 @@ att["my_int8"] = in.MyInt8
 att["my_int16"] = in.MyInt16
 att["my_int32"] = in.MyInt32
 att["my_int64"] = in.MyInt64
+att["my_u_int"] = in.MyUInt
+att["my_u_int32"] = in.MyUInt32
+att["my_u_int64"] = in.MyUInt64
 att["my_float32"] = in.MyFloat32
 att["my_float64"] = in.MyFloat64
 att["my_string"] = in.MyString
@@ -115,6 +124,9 @@ func TestFlattenersFromStruct_ptrsToPrimitives(t *testing.T) {
 		MyInt16   *int16
 		MyInt32   *int32
 		MyInt64   *int64
+		MyUInt    *uint
+		MyUInt32  *uint32
+		MyUInt64  *uint64
 		MyFloat32 *float32
 		MyFloat64 *float64
 		MyString  *string
@@ -134,6 +146,9 @@ att["my_int8"] = *in.MyInt8
 att["my_int16"] = *in.MyInt16
 att["my_int32"] = *in.MyInt32
 att["my_int64"] = *in.MyInt64
+att["my_u_int"] = *in.MyUInt
+att["my_u_int32"] = *in.MyUInt32
+att["my_u_int64"] = *in.MyUInt64
 att["my_float32"] = *in.MyFloat32
 att["my_float64"] = *in.MyFloat64
 att["my_string"] = *in.MyString
