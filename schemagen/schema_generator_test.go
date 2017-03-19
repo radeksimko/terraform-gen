@@ -14,6 +14,7 @@ func TestGenerateField_primitive(t *testing.T) {
 		MyInt16   int16
 		MyInt32   int32
 		MyInt64   int64
+		MyUint    uint
 		MyFloat32 float32
 		MyFloat64 float64
 		MyString  string `json:"myString"`
@@ -38,6 +39,7 @@ func TestGenerateField_primitive(t *testing.T) {
 		"my_int16":   "{\nType: schema.TypeInt,\n}",
 		"my_int32":   "{\nType: schema.TypeInt,\n}",
 		"my_int64":   "{\nType: schema.TypeInt,\n}",
+		"my_uint":    "{\nType: schema.TypeInt,\n}",
 		"my_float32": "{\nType: schema.TypeFloat,\n}",
 		"my_float64": "{\nType: schema.TypeFloat,\n}",
 		"my_string":  "{\nType: schema.TypeString,\nDescription: \"Description for my string\",\n}",
