@@ -3,6 +3,8 @@ package helpergen
 import (
 	"reflect"
 	"testing"
+
+	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func TestFlattenersFromStruct_primitives(t *testing.T) {
@@ -309,6 +311,110 @@ m["simple_float"] = n.SimpleFloat
 att[i] = m
 }
 return att
+}`,
+	}
+	if !reflect.DeepEqual(output, expectedOutput) {
+		t.Fatalf("\nExpected: %s\n\nGiven:    %s", expectedOutput, output)
+	}
+}
+
+func TestFlattenerFromStruct_optionalPrimitives(t *testing.T) {
+	type SimpleStruct struct {
+		MyInt    int     `api:"optional"`
+		MyString string  `api:"optional"`
+		MyFloat  float64 `api:"optional"`
+		MyBool   bool    `api:"optional"`
+	}
+	hg := &HelperGenerator{
+		InputVarName:  "in",
+		OutputVarName: "att",
+	}
+	hg.InlineFieldFilterFunc = func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		tag := sf.Tag.Get("api")
+		if tag == "optional" {
+			s.Optional = true
+			return k, false
+		}
+		return k, true
+	}
+	hg.OutlineFieldFilterFunc = func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		tag := sf.Tag.Get("api")
+		if tag == "optional" {
+			s.Optional = true
+			return k, true
+		}
+		return k, false
+	}
+
+	output := hg.FlattenersFromStruct(SimpleStruct{})
+	expectedOutput := map[string]string{
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
+att := make(map[string]interface{})
+if in.MyInt != 0 {
+att["my_int"] = in.MyInt
+}
+if in.MyString != "" {
+att["my_string"] = in.MyString
+}
+if in.MyFloat != 0 {
+att["my_float"] = in.MyFloat
+}
+if in.MyBool != false {
+att["my_bool"] = in.MyBool
+}
+return []interface{}{att}
+}`,
+	}
+	if !reflect.DeepEqual(output, expectedOutput) {
+		t.Fatalf("\nExpected: %s\n\nGiven:    %s", expectedOutput, output)
+	}
+}
+
+func TestFlattenerFromStruct_optionalPtrToPrimitives(t *testing.T) {
+	type SimpleStruct struct {
+		MyInt    *int     `api:"optional"`
+		MyString *string  `api:"optional"`
+		MyFloat  *float64 `api:"optional"`
+		MyBool   *bool    `api:"optional"`
+	}
+	hg := &HelperGenerator{
+		InputVarName:  "in",
+		OutputVarName: "att",
+	}
+	hg.InlineFieldFilterFunc = func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		tag := sf.Tag.Get("api")
+		if tag == "optional" {
+			s.Optional = true
+			return k, false
+		}
+		return k, true
+	}
+	hg.OutlineFieldFilterFunc = func(iface interface{}, sf *reflect.StructField, k reflect.Kind, s *schema.Schema) (reflect.Kind, bool) {
+		tag := sf.Tag.Get("api")
+		if tag == "optional" {
+			s.Optional = true
+			return k, true
+		}
+		return k, false
+	}
+
+	output := hg.FlattenersFromStruct(SimpleStruct{})
+	expectedOutput := map[string]string{
+		"flattenSimpleStruct": `func flattenSimpleStruct(in helpergen.SimpleStruct) []interface{} {
+att := make(map[string]interface{})
+if in.MyInt != nil {
+att["my_int"] = *in.MyInt
+}
+if in.MyString != nil {
+att["my_string"] = *in.MyString
+}
+if in.MyFloat != nil {
+att["my_float"] = *in.MyFloat
+}
+if in.MyBool != nil {
+att["my_bool"] = *in.MyBool
+}
+return []interface{}{att}
 }`,
 	}
 	if !reflect.DeepEqual(output, expectedOutput) {

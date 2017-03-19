@@ -22,15 +22,29 @@ func (hg *HelperGenerator) generateFlattenersFromStruct(iface interface{}) strin
 
 	funcName := flattenerFuncNameFromType(t)
 	funcBody := hg.flattenerDeclarationBeginning(t)
+
+	// Inline fields (typically those we never expect to be empty)
 	for i := 0; i < rawType.NumField(); i++ {
 		sf := rawType.Field(i)
-		body, err := hg.generateFlattenerFieldCode(sf.Name, sf.Type, iface, &sf, false)
+		body, err := hg.inlineFlattenerField(sf.Name, sf.Type, iface, &sf, false)
 		if err != nil {
-			log.Printf("Skipping %s: %s", sf.Name, err)
+			log.Printf("Skipping %s (inline): %s", sf.Name, err)
 			continue
 		}
 		funcBody += body
 	}
+
+	// Outline fields (typically optional)
+	for i := 0; i < rawType.NumField(); i++ {
+		sf := rawType.Field(i)
+		body, err := hg.outlineFlattenerField(sf.Name, sf.Type, iface, &sf, false)
+		if err != nil {
+			log.Printf("Skipping %s (outline): %s", sf.Name, err)
+			continue
+		}
+		funcBody += body
+	}
+
 	funcBody += hg.flattenerDeclarationEnd(t)
 
 	hg.declarations[funcName] = &FunctionDeclaration{
@@ -71,67 +85,21 @@ return ` + hg.OutputVarName
 	return `return []interface{}{` + hg.OutputVarName + `}`
 }
 
-func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {
+func (hg *HelperGenerator) inlineFlattenerField(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {
 	kind := u.DereferencePtrType(sfType).Kind()
 	s := &schema.Schema{}
 
 	if sf != nil {
 		var ok bool
-		kind, ok = hg.FieldFilterFunc(iface, sf, kind, s)
+		kind, ok = hg.InlineFieldFilterFunc(iface, sf, kind, s)
 		if !ok {
-			return "", fmt.Errorf("Skipping %q (filter)", sf.Name)
+			return "", fmt.Errorf("Skipping %q (inline filter)", sf.Name)
 		}
 	}
 
-	inputVarName := hg.InputVarName
-	if hg.mapValueName != "" {
-		inputVarName = hg.mapValueName
-	}
-
-	value := "// TODO"
-	switch kind {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Float32, reflect.Float64, reflect.String, reflect.Bool:
-		// Primitive data types are easy
-		sfPtr := ""
-		if sfType.Kind() == reflect.Ptr {
-			sfPtr = "*"
-		}
-		value = fmt.Sprintf("%s%s.%s", sfPtr, inputVarName, sf.Name)
-	case reflect.Map:
-		// TODO: map[string]*string
-		// TODO: map[string]*string
-		// TODO: map[string]int
-		// TODO: map[string]bool
-		// TODO: map[string]float
-		value = fmt.Sprintf("%s.%s", inputVarName, sf.Name)
-	case reflect.Slice:
-		// TODO: s.Type == TypeSet
-		sliceOf := sfType.Elem()
-		switch sliceOf.Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Float32, reflect.Float64, reflect.String, reflect.Bool:
-			// Slice of primitive data types
-			value = fmt.Sprintf("%s.%s", inputVarName, sf.Name)
-		case reflect.Ptr:
-			ptrTo := sliceOf.Elem()
-			funcName := hg.primitivePtrSliceFlattenerForType(ptrTo, sfType)
-			value = fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name)
-		case reflect.Struct:
-			iface := reflect.New(sfType).Elem().Interface()
-			funcName := hg.generateFlattenersFromStruct(iface)
-			value = fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name)
-		default:
-			f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
-			return "", fmt.Errorf("Unable to process: %s", f)
-		}
-	case reflect.Struct:
-		iface := reflect.New(sfType).Elem().Interface()
-		funcName := hg.generateFlattenersFromStruct(iface)
-		value = fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name)
-	default:
-		f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
-		return "", fmt.Errorf("Unable to process: %s", f)
+	value, err := hg.flattenerFieldValue(kind, sf, sfName, sfType)
+	if err != nil {
+		return "", err
 	}
 
 	leftSide := fmt.Sprintf("%s[%q]", hg.OutputVarName, u.Underscore(sf.Name))
@@ -139,7 +107,36 @@ func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType refl
 		leftSide = fmt.Sprintf("%s[%q]", hg.mapVarName, u.Underscore(sf.Name))
 	}
 
-	if s.Optional && !s.Computed {
+	return fmt.Sprintf("%s = %s\n", leftSide, value), nil
+}
+
+func (hg *HelperGenerator) outlineFlattenerField(sfName string, sfType reflect.Type, iface interface{}, sf *reflect.StructField, isNested bool) (string, error) {
+	kind := u.DereferencePtrType(sfType).Kind()
+	s := &schema.Schema{}
+
+	if sf != nil {
+		var ok bool
+		kind, ok = hg.OutlineFieldFilterFunc(iface, sf, kind, s)
+		if !ok {
+			return "", fmt.Errorf("Skipping %q (outline filter)", sf.Name)
+		}
+	}
+
+	value, err := hg.flattenerFieldValue(kind, sf, sfName, sfType)
+	if err != nil {
+		return "", err
+	}
+
+	leftSide := fmt.Sprintf("%s[%q]", hg.OutputVarName, u.Underscore(sf.Name))
+	if hg.mapVarName != "" {
+		leftSide = fmt.Sprintf("%s[%q]", hg.mapVarName, u.Underscore(sf.Name))
+	}
+
+	if s.Optional || s.Computed {
+		inputVarName := hg.InputVarName
+		if hg.mapValueName != "" {
+			inputVarName = hg.mapValueName
+		}
 		emptyValue, err := emptyConditionForType(inputVarName, sf)
 		if err != nil {
 			log.Printf("Unknown optional condition: %s", err)
@@ -151,6 +148,55 @@ func (hg *HelperGenerator) generateFlattenerFieldCode(sfName string, sfType refl
 	}
 
 	return fmt.Sprintf("%s = %s\n", leftSide, value), nil
+}
+
+func (hg *HelperGenerator) flattenerFieldValue(kind reflect.Kind, sf *reflect.StructField, sfName string, sfType reflect.Type) (string, error) {
+	inputVarName := hg.InputVarName
+	if hg.mapValueName != "" {
+		inputVarName = hg.mapValueName
+	}
+
+	switch kind {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Float32, reflect.Float64, reflect.String, reflect.Bool:
+		// Primitive data types are easy
+		sfPtr := ""
+		if sfType.Kind() == reflect.Ptr {
+			sfPtr = "*"
+		}
+		return fmt.Sprintf("%s%s.%s", sfPtr, inputVarName, sf.Name), nil
+	case reflect.Map:
+		// TODO: map[string]*string
+		// TODO: map[string]*string
+		// TODO: map[string]int
+		// TODO: map[string]bool
+		// TODO: map[string]float
+		return fmt.Sprintf("%s.%s", inputVarName, sf.Name), nil
+	case reflect.Slice:
+		// TODO: s.Type == TypeSet
+		sliceOf := sfType.Elem()
+		switch sliceOf.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Float32, reflect.Float64, reflect.String, reflect.Bool:
+			// Slice of primitive data types
+			return fmt.Sprintf("%s.%s", inputVarName, sf.Name), nil
+		case reflect.Ptr:
+			ptrTo := sliceOf.Elem()
+			funcName := hg.primitivePtrSliceFlattenerForType(ptrTo, sfType)
+			return fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name), nil
+		case reflect.Struct:
+			iface := reflect.New(sfType).Elem().Interface()
+			funcName := hg.generateFlattenersFromStruct(iface)
+			return fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name), nil
+		}
+	case reflect.Struct:
+		iface := reflect.New(sfType).Elem().Interface()
+		funcName := hg.generateFlattenersFromStruct(iface)
+		return fmt.Sprintf("%s(%s.%s)", funcName, inputVarName, sf.Name), nil
+	}
+
+	f := fmt.Sprintf("%s %s\n", sfName, sfType.String())
+	return "", fmt.Errorf("Unable to process: %s", f)
 }
 
 func (hg *HelperGenerator) primitivePtrSliceFlattenerForType(t reflect.Type, sfType reflect.Type) string {
