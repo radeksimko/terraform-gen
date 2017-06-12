@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"reflect"
@@ -41,7 +43,8 @@ func main() {
 		sg := &schemagen.SchemaGenerator{DocsFunc: docsFunc, FilterFunc: filterFunc}
 		fields := sg.FromStruct(s.Obj)
 
-		err = podTemplate.Execute(f, struct {
+		bs := &bytes.Buffer{}
+		err = podTemplate.Execute(bs, struct {
 			PkgName      string
 			VariableName string
 			Fields       map[string]string
@@ -51,6 +54,13 @@ func main() {
 			Fields:       fields,
 		})
 		if err != nil {
+			log.Fatal(err)
+		}
+		fmtd, err := format.Source(bs.Bytes())
+		if err != nil {
+			log.Fatal(err)
+		}
+		if _, err := f.Write(fmtd); err != nil {
 			log.Fatal(err)
 		}
 	}

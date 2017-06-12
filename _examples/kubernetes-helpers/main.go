@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"reflect"
@@ -46,7 +48,8 @@ func main() {
 		flatteners := hg.FlattenersFromStruct(s.Obj)
 		expanders := hg.ExpandersFromStruct(s.Obj)
 
-		err = tpl.Execute(f, struct {
+		bs := &bytes.Buffer{}
+		err = tpl.Execute(bs, struct {
 			PkgName    string
 			Flatteners map[string]string
 			Expanders  map[string]string
@@ -56,6 +59,13 @@ func main() {
 			Expanders:  expanders,
 		})
 		if err != nil {
+			log.Fatal(err)
+		}
+		fmtd, err := format.Source(bs.Bytes())
+		if err != nil {
+			log.Fatal(err)
+		}
+		if _, err := f.Write(fmtd); err != nil {
 			log.Fatal(err)
 		}
 	}
