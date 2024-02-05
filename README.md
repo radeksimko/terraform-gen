@@ -1,6 +1,12 @@
 # terraform-gen
 
-Generator(s) of various things for [Terraform](https://github.com/hashicorp/terraform)
+Generator(s) of code for [Terraform](https://github.com/hashicorp/terraform) providers.
+
+## DEPRECATED/ARCHIVED
+
+The repository is no longer maintained.
+
+For alternatives you may check out the officially maintained provider code generation projects as announced in October 2023: https://www.hashicorp.com/blog/terraform-provider-code-generation-now-in-tech-preview
 
 ## Why
 
